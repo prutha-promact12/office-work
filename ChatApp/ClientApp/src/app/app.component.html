@@ -1,0 +1,31 @@
+
+<div class='container-fluid'>
+  <div class='row'>
+    <div class='col-sm-3'>
+      <app-nav-menu></app-nav-menu>
+    </div>
+    <div class='col-sm-9 body-content'>
+      <div>
+        <nav class="navbar navbar-default">
+          <div class="container-fluid">
+            <a class="navbar-brand">
+              Chat..
+            </a>
+          </div>
+        </nav>
+      </div>
+      <router-outlet></router-outlet>
+
+    </div>
+  </div>
+  <div id="frame">
+    <div class="message-input">
+      <div class="wrap">
+        <input type="text" placeholder="Write your message..." />
+        <i class="fa fa-paperclip attachment" aria-hidden="true"></i>
+        <button class="submit"><i class="fa fa-paper-plane" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </div>
+
+
