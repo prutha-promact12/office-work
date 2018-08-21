@@ -7,8 +7,8 @@ namespace ChatApp.DataService
 {
     public interface MessageService
     {
-        Task<Chatmessage> AddmsgAsync(Chatmessage data);
-        Task<List<Chatmessage>> GetmsgAsync();
-        Task<bool> UpadateReadStatusAsync(Chatmessage data);
+        Task<Messages> AddMsgAsync(Messages data);
+        Task<List<Messages>> GetMsgAsync();
+        Task<bool> UpadateReadStatusAsync(Messages data);
     }
 }

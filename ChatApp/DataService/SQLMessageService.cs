@@ -13,13 +13,16 @@ namespace ChatApp.DataService
     {
         private readonly ChatAppContext _context;
         private readonly ILogger _Logger;
+
+    
+
         public SQLMessageService(ChatAppContext context, ILoggerFactory loggerFactory)
         {
             _context = context;
             _Logger = loggerFactory.CreateLogger("MessageRepository");
         }
 
-        public async Task<Chatmessage> AddmsgAsync(Chatmessage data)
+        public async Task<Messages> AddMsgAsync(Messages data)
         {
             _context.Add(data);
             try
@@ -28,7 +31,7 @@ namespace ChatApp.DataService
             }
             catch(System.Exception exp)
             {
-                _Logger.LogError($"Error in {nameof(AddmsgAsync)}:" + exp.Message);
+                _Logger.LogError($"Error in {nameof(AddMsgAsync)}:" + exp.Message);
             }
             return data;
         }
@@ -46,7 +49,7 @@ namespace ChatApp.DataService
             {
                 return (await _context.SaveChangesAsync() > 0 ? true : false);
             }
-            catch(Exception exp)
+            catch (Exception exp)
             {
                 _Logger.LogError($"Error in {nameof(UpadateReadStatusAsync)}: " + exp.Message);
             }

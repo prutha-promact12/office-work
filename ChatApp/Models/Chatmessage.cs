@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 namespace ChatApp.Models
 {
-    public class Chatmessage
+    public class ChatMessage
     {
         public bool Status { get; set; }
         public Messages messages { get; set; }

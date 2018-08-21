@@ -1,17 +1,15 @@
 import { Injectable } from '@angular/core';
 import { User } from '../ChatApp/User';
-import { HttpClient, HttpHeaders } from '@angular/common/http'; 
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { retry } from 'rxjs/operator/retry';
 import { logging } from 'protractor';
-
-
-
+import { map } from 'rxjs/operators';
 @Injectable()
 export class LoginService {
-
   private Url: string = 'api/login';
+
   constructor(private http: HttpClient) { }
+
   public Sender: string;
   public Recevier: string;
   setSender(Name) {

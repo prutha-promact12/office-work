@@ -10,15 +10,16 @@ export class HubConnectionService {
   text: string;
   unread: number = 1;
   private _hubconnction: HubConnection;
+
   constructor() {
+
     this.init();
   }
-  setConnctionId(sender)
-  {
+
+  setConnctionId(sender) {
     this._hubconnction.invoke('setConncetionId', sender);
   }
-  setStatus(sender)
-  {
+  setStatus(sender) {
     this._hubconnction.invoke('setStatus', sender);
   }
   sendDirectMessage(senderId, recevierId, Message, Sender) {
@@ -42,4 +43,5 @@ export class HubConnectionService {
       this.messages.push(this.text);
     });
   }
+
 }

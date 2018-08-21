@@ -6,120 +6,108 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ChatApp.Models;
+using Microsoft.Extensions.Logging;
+using ChatApp.DataService;
 
-namespace ChatApp
+
+namespace ChatApp.Apis
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class loginsController : ControllerBase
+    [Produces("application/json")]
+    [Route("api/login")]
+    public class LoginController : Controller
     {
-        private readonly ChatAppContext _context;
-
-        public loginsController(ChatAppContext context)
+        private LoginService _logindata;
+        private ILogger _Logger;
+        
+        public LoginController (LoginService Logindata, ILoggerFactory loggerFactory)
         {
-            _context = context;
+            _logindata = Logindata;
+            _Logger = loggerFactory.CreateLogger(nameof(LoginController));
         }
 
-        // GET: api/logins
         [HttpGet]
-        public IEnumerable<login> Getlogin()
+        [ProducesResponseType(typeof(List<login>), 200)]
+        [ProducesResponseType(typeof(api), 400)]
+        public async Task<ActionResult> Employees()
         {
-            return _context.login;
+            try
+            {
+                var users = await _logindata.GetUserAsync();
+                return Ok(users);
+            }
+            catch (Exception exp)
+            {
+                _Logger.LogError(exp.Message);
+                return BadRequest(new api { Status = false });
+            }
         }
 
-        // GET: api/logins/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Getlogin([FromRoute] int id)
+        [HttpGet("{name}")]
+        [ProducesResponseType(typeof(login), 200)]
+        public async Task<ActionResult> GetUser(string name)
+        {
+            try
+            {
+                var user = await _logindata.GetUserAsync(name);
+                return Ok(user);
+            }
+            catch (Exception exp)
+            {
+                _Logger.LogError(exp.Message);
+                return BadRequest(new api{ Status = false });
+            }
+        }
+
+        [HttpPost]
+        [ProducesResponseType(typeof(api), 201)]
+        [ProducesResponseType(typeof(api), 400)]
+        public async Task<ActionResult> AddUser([FromBody]login info)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new api { Status = false, ModelState = ModelState });
             }
-
-            var login = await _context.login.FindAsync(id);
-
-            if (login == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(login);
-        }
-
-        // PUT: api/logins/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Putlogin([FromRoute] int id, [FromBody] login login)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != login.id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(login).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                var newuser = await _logindata.AddUserAsync(info);
+                if (newuser == null)
+                {
+                    return BadRequest(new api { Status = false });
+                }
+                return CreatedAtRoute("GetUserRoute", new { id = newuser.id }, newuser);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception exp)
             {
-                if (!loginExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                _Logger.LogError(exp.Message);
+                return BadRequest(new api { Status = false });
             }
-
-            return NoContent();
         }
-
-        // POST: api/logins
-        [HttpPost]
-        public async Task<IActionResult> Postlogin([FromBody] login login)
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(api), 200)]
+        [ProducesResponseType(typeof(api), 400)]
+        public async Task<ActionResult> UpdateUser(int id, [FromBody]login info)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new api { Status = false, ModelState = ModelState });
             }
 
-            _context.login.Add(login);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("Getlogin", new { id = login.id }, login);
-        }
-
-        // DELETE: api/logins/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Deletelogin([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                var status = await _logindata.UpdateUserStatusAsync(info);
+                if (!status)
+                {
+                    return BadRequest(new api { Status = false });
+                }
+                return Ok(new api { Status = true, User = info });
             }
-
-            var login = await _context.login.FindAsync(id);
-            if (login == null)
+            catch (Exception exp)
             {
-                return NotFound();
+                _Logger.LogError(exp.Message);
+                return BadRequest(new api { Status = false });
             }
-
-            _context.login.Remove(login);
-            await _context.SaveChangesAsync();
-
-            return Ok(login);
-        }
-
-        private bool loginExists(int id)
-        {
-            return _context.login.Any(e => e.id == id);
         }
     }
 }
+    

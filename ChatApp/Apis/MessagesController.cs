@@ -1,125 +1,89 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using ChatApp.DataService;
 using ChatApp.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
-namespace ChatApp
+namespace ChatApplication.Apis
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class MessagesController : ControllerBase
+    [Produces("application/json")]
+    [Route("api/message")]
+    public class MessageController : Controller
     {
-        private readonly ChatAppContext _context;
+        private MessageService _msgservice;
+        private ILogger _Logger;
 
-        public MessagesController(ChatAppContext context)
+        public MessageController(MessageService msgservice, ILoggerFactory loggerFactory)
         {
-            _context = context;
+            _msgservice = msgservice;
+            _Logger = loggerFactory.CreateLogger(nameof(MessageController));
         }
-
-        // GET: api/Messages
         [HttpGet]
-        public IEnumerable<Messages> GetMessages()
+        [ProducesResponseType(typeof(List<Messages>), 200)]
+        [ProducesResponseType(typeof(ChatMessage), 400)]
+        public async Task<ActionResult> Messages()
         {
-            return _context.Messages;
+            try
+            {
+                var msgs = await _msgservice.GetMsgAsync();
+                return Ok(msgs);
+            }
+            catch (Exception exp)
+            {
+                _Logger.LogError(exp.Message);
+                return BadRequest(new ChatMessage { Status = false });
+            }
         }
-
-        // GET: api/Messages/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetMessages([FromRoute] int id)
+        [HttpPost]
+        [ProducesResponseType(typeof(ChatMessage), 201)]
+        [ProducesResponseType(typeof(ChatMessage), 400)]
+        public async Task<ActionResult> AddMsg([FromBody]Messages data)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new ChatMessage { Status = false, ModelStates = ModelState });
             }
-
-            var messages = await _context.Messages.FindAsync(id);
-
-            if (messages == null)
+            try
             {
-                return NotFound();
+                var newmsg = await _msgservice.AddMsgAsync(data);
+                if (newmsg == null)
+                {
+                    return BadRequest(new ChatMessage { Status = false });
+                }
+                return CreatedAtRoute("GetMessageRoute", new { id = newmsg.id }, newmsg);
             }
-
-            return Ok(messages);
+            catch (Exception exp)
+            {
+                _Logger.LogError(exp.Message);
+                return BadRequest(new ChatMessage { Status = false });
+            }
         }
-
-        // PUT: api/Messages/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMessages([FromRoute] int id, [FromBody] Messages messages)
+        [ProducesResponseType(typeof(ChatMessage), 200)]
+        [ProducesResponseType(typeof(ChatMessage), 400)]
+        public async Task<ActionResult> UpdateRead(int id, [FromBody]Messages data)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new ChatMessage { Status = false, ModelStates = ModelState });
             }
-
-            if (id != messages.id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(messages).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MessagesExists(id))
+                var status = await _msgservice.UpadateReadStatusAsync(data);
+                if (!status)
                 {
-                    return NotFound();
+                    return BadRequest(new ChatMessage { Status = false });
                 }
-                else
-                {
-                    throw;
-                }
+                return Ok(new ChatMessage { Status = true, messages = data });
             }
-
-            return NoContent();
-        }
-
-        // POST: api/Messages
-        [HttpPost]
-        public async Task<IActionResult> PostMessages([FromBody] Messages messages)
-        {
-            if (!ModelState.IsValid)
+            catch (Exception exp)
             {
-                return BadRequest(ModelState);
+                _Logger.LogError(exp.Message);
+                return BadRequest(new ChatMessage { Status = false });
             }
-
-            _context.Messages.Add(messages);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetMessages", new { id = messages.id }, messages);
-        }
-
-        // DELETE: api/Messages/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMessages([FromRoute] int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var messages = await _context.Messages.FindAsync(id);
-            if (messages == null)
-            {
-                return NotFound();
-            }
-
-            _context.Messages.Remove(messages);
-            await _context.SaveChangesAsync();
-
-            return Ok(messages);
-        }
-
-        private bool MessagesExists(int id)
-        {
-            return _context.Messages.Any(e => e.id == id);
         }
     }
 }
